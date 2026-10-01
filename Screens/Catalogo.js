@@ -3,11 +3,12 @@ import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import Categoria from "../components/Categoria";
 import Producto from "../components/Producto";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase/config";
 
 const Catalogo = () => {
   const [busqueda, setBusqueda] = useState("");
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("todos");
   const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
 
@@ -42,25 +43,27 @@ const Catalogo = () => {
     }
   };
 
-  const productosFiltrados = productos.filter((producto) =>
-    producto.nombre.toLowerCase().includes(busqueda.toLowerCase()),
-  );
+  const categoriasConTodos = [
+    { id: "todos", nombre: "Todos", icono: "grid-outline" },
+    ...categorias,
+  ];
 
-  const obtenerProductosPorCategoria = async (categoriaId) => {
-    try {
-      const consulta = query(
-        collection(db, "Productos"),
-        where("idCategoria", "==", categoriaId),
-      );
-      const consultaSnapshot = await getDocs(consulta);
-      const datos = [];
-      consultaSnapshot.forEach((documento) => {
-        datos.push({ id: documento.id, ...documento.data() });
-      });
-      setProductos(datos);
-    } catch (error) {
-      console.error("Error obteniendo productos por categoría:", error);
-    }
+  const productosFiltrados = productos.filter((producto) => {
+    // El campo en Firebase se llama "categoriaId" (no "idCategoria").
+    // Se usa trim() porque algunos valores tienen espacios al final (ej: "4 ").
+    const coincideCategoria =
+      categoriaSeleccionada === "todos" ||
+      String(producto.categoriaId ?? "").trim() ===
+        String(categoriaSeleccionada).trim();
+
+    const nombreProducto = (producto.nombre || "").toLowerCase();
+    const coincideBusqueda = nombreProducto.includes(busqueda.toLowerCase());
+
+    return coincideCategoria && coincideBusqueda;
+  });
+
+  const seleccionarCategoria = (categoriaId) => {
+    setCategoriaSeleccionada(categoriaId);
   };
 
   return (
@@ -81,13 +84,15 @@ const Catalogo = () => {
         showsHorizontalScrollIndicator={false}
         style={styles.categorias}
         contentContainerStyle={styles.categoriasContent}
-        data={categorias}
-        keyExtractor={(item) => item.id}
+        data={categoriasConTodos}
+        keyExtractor={(item) => String(item.id)}
+        extraData={categoriaSeleccionada}
         renderItem={({ item }) => (
           <Categoria
             nombre={item.nombre}
             icono={item.icono}
-            onPress={() => obtenerProductosPorCategoria(item.id)}
+            seleccionada={categoriaSeleccionada === item.id}
+            onPress={() => seleccionarCategoria(item.id)}
           />
         )}
       />
