@@ -1,4 +1,11 @@
-import { View, Text, TextInput, StyleSheet, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  FlatList,
+} from "react-native";
 import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
 import Categoria from "../components/Categoria";
@@ -67,59 +74,54 @@ const Catalogo = () => {
   };
 
   return (
-    <View style={styles.contenedor}>
+    <ScrollView
+      style={styles.contenedor}
+      contentContainerStyle={styles.contenedorContenido}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.buscador}>
         <Ionicons name="search-outline" size={18} color="#7C7CFF" />
         <TextInput
           placeholder="Buscar producto"
-          placeholderTextColor="#0d0dda"
+          placeholderTextColor="#B5B5D5"
           style={styles.input}
           value={busqueda}
           onChangeText={setBusqueda}
         />
       </View>
 
-      <FlatList
+      <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.categorias}
-        contentContainerStyle={styles.categoriasContent}
-        data={categoriasConTodos}
-        keyExtractor={(item) => String(item.id)}
-        extraData={categoriaSeleccionada}
-        renderItem={({ item }) => (
+        contentContainerStyle={styles.categoriasContenido}
+      >
+        {categoriasConTodos.map((categoria) => (
           <Categoria
-            nombre={item.nombre}
-            icono={item.icono}
-            seleccionada={categoriaSeleccionada === item.id}
-            onPress={() => seleccionarCategoria(item.id)}
+            key={categoria.id}
+            nombre={categoria.nombre}
+            icono={categoria.icono}
+            onPress={() => seleccionarCategoria(categoria.id)}
           />
-        )}
-      />
+        ))}
+      </ScrollView>
 
       <View style={styles.linea} />
       <Text style={styles.titulo}>News</Text>
 
-      <FlatList
-        data={productosFiltrados}
-        renderItem={({ item }) => (
+      <View style={styles.productos}>
+        {productosFiltrados.map((producto) => (
           <Producto
-            nombre={item.nombre}
-            precio={item.precio}
-            tiempo={item.tiempo}
-            color={item.color}
-            imagen={item.imagen}
+            key={producto.id}
+            nombre={producto.nombre}
+            precio={producto.precio}
+            imagen={producto.imagen}
+            color={producto.color || "#F4F4F4"}
+            tiempo={producto.tiempo || "Hoy"}
           />
-        )}
-        keyExtractor={(item) => item.id.toString()}
-        horizontal={false}
-        numColumns={2}
-        columnWrapperStyle={styles.columnWrapper}
-        contentContainerStyle={styles.listaProductos}
-        scrollEnabled={false}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
+        ))}
+      </View>
+    </ScrollView>
   );
 };
 
@@ -162,6 +164,12 @@ const styles = StyleSheet.create({
     color: "#222",
     marginTop: 15,
     marginBottom: 10,
+  },
+  productos: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    paddingBottom: 20,
   },
   listaProductos: {
     paddingBottom: 20,
