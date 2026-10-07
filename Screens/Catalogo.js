@@ -55,13 +55,29 @@ const Catalogo = () => {
     ...categorias,
   ];
 
+  const normalizarTexto = (valor) =>
+    String(valor ?? "").trim().toLowerCase();
+
   const productosFiltrados = productos.filter((producto) => {
-    // El campo en Firebase se llama "categoriaId" (no "idCategoria").
-    // Se usa trim() porque algunos valores tienen espacios al final (ej: "4 ").
+    const categoriaProducto = normalizarTexto(
+      producto.categoriaId ?? producto.categoria ?? producto.categoriaNombre ?? ""
+    );
+    const categoriaSeleccionadaNormalizada = normalizarTexto(categoriaSeleccionada);
+
     const coincideCategoria =
       categoriaSeleccionada === "todos" ||
-      String(producto.categoriaId ?? "").trim() ===
-        String(categoriaSeleccionada).trim();
+      categoriaProducto === categoriaSeleccionadaNormalizada ||
+      categorias.some((categoria) => {
+        const opcionesCategoria = [
+          normalizarTexto(categoria.id),
+          normalizarTexto(categoria.nombre),
+        ];
+
+        return (
+          opcionesCategoria.includes(categoriaProducto) &&
+          opcionesCategoria.includes(categoriaSeleccionadaNormalizada)
+        );
+      });
 
     const nombreProducto = (producto.nombre || "").toLowerCase();
     const coincideBusqueda = nombreProducto.includes(busqueda.toLowerCase());
