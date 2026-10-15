@@ -1,39 +1,65 @@
+import { useCallback, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   StyleSheet,
   ScrollView,
-  FlatList,
 } from "react-native";
-import { useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useFocusEffect } from "@react-navigation/native";
+import { db } from "../firebase/config";
 import Categoria from "../components/Categoria";
 import Producto from "../components/Producto";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "../firebase/config";
 
 const Catalogo = () => {
   const [busqueda, setBusqueda] = useState("");
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState("todos");
   const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
+  const [todosProductos, setTodosProductos] = useState([]);
 
-  useEffect(() => {
-    obtenerCategorias();
-    obtenerProductos();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      obtenerCategorias();
+      obtenerProductos();
+    }, []),
+  );
 
   const obtenerCategorias = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "Categorias"));
-      const datos = [];
+      const datos = [{ id: "todos", nombre: "Todos", icono: "grid-outline" }];
+
       querySnapshot.forEach((doc) => {
         datos.push({ id: doc.id, ...doc.data() });
       });
+
       setCategorias(datos);
     } catch (error) {
       console.error("Error obteniendo categorías: ", error);
+    }
+  };
+
+  const obtenerProductosPorCategoria = async (categoriaId) => {
+    if (categoriaId === "todos") {
+      setProductos(todosProductos);
+      return;
+    }
+
+    try {
+      const consulta = query(
+        collection(db, "Productos"),
+        where("categoriaId", "==", categoriaId),
+      );
+      const consultaSnapshot = await getDocs(consulta);
+      const datos = [];
+      consultaSnapshot.forEach((documento) => {
+        datos.push({ id: documento.id, ...documento.data() });
+      });
+      setProductos(datos);
+    } catch (error) {
+      console.error("Error obteniendo productos por categoría:", error);
     }
   };
 
@@ -44,50 +70,16 @@ const Catalogo = () => {
       querySnapshot.forEach((doc) => {
         datos.push({ id: doc.id, ...doc.data() });
       });
+      setTodosProductos(datos);
       setProductos(datos);
     } catch (error) {
       console.error("Error obteniendo productos: ", error);
     }
   };
 
-  const categoriasConTodos = [
-    { id: "todos", nombre: "Todos", icono: "grid-outline" },
-    ...categorias,
-  ];
-
-  const normalizarTexto = (valor) =>
-    String(valor ?? "").trim().toLowerCase();
-
-  const productosFiltrados = productos.filter((producto) => {
-    const categoriaProducto = normalizarTexto(
-      producto.categoriaId ?? producto.categoria ?? producto.categoriaNombre ?? ""
-    );
-    const categoriaSeleccionadaNormalizada = normalizarTexto(categoriaSeleccionada);
-
-    const coincideCategoria =
-      categoriaSeleccionada === "todos" ||
-      categoriaProducto === categoriaSeleccionadaNormalizada ||
-      categorias.some((categoria) => {
-        const opcionesCategoria = [
-          normalizarTexto(categoria.id),
-          normalizarTexto(categoria.nombre),
-        ];
-
-        return (
-          opcionesCategoria.includes(categoriaProducto) &&
-          opcionesCategoria.includes(categoriaSeleccionadaNormalizada)
-        );
-      });
-
-    const nombreProducto = (producto.nombre || "").toLowerCase();
-    const coincideBusqueda = nombreProducto.includes(busqueda.toLowerCase());
-
-    return coincideCategoria && coincideBusqueda;
-  });
-
-  const seleccionarCategoria = (categoriaId) => {
-    setCategoriaSeleccionada(categoriaId);
-  };
+  const productosFiltrados = productos.filter((producto) =>
+    (producto.nombre || "").toLowerCase().includes(busqueda.toLowerCase()),
+  );
 
   return (
     <ScrollView
@@ -110,14 +102,14 @@ const Catalogo = () => {
         horizontal
         showsHorizontalScrollIndicator={false}
         style={styles.categorias}
-        contentContainerStyle={styles.categoriasContenido}
+        contentContainerStyle={styles.categoriasContent}
       >
-        {categoriasConTodos.map((categoria) => (
+        {categorias.map((categoria) => (
           <Categoria
             key={categoria.id}
             nombre={categoria.nombre}
             icono={categoria.icono}
-            onPress={() => seleccionarCategoria(categoria.id)}
+            onPress={() => obtenerProductosPorCategoria(categoria.id)}
           />
         ))}
       </ScrollView>
@@ -146,7 +138,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 10,
-    marginTop: 40,
   },
   buscador: {
     height: 55,
@@ -167,7 +158,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   categoriasContent: {
-    paddingRight: 12,
+    paddingRight: 10,
   },
   linea: {
     height: 3,
@@ -181,18 +172,17 @@ const styles = StyleSheet.create({
     marginTop: 15,
     marginBottom: 10,
   },
-  productos: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+  columnWrapper: {
     justifyContent: "space-between",
-    paddingBottom: 20,
+    paddingHorizontal: 4,
   },
   listaProductos: {
     paddingBottom: 20,
   },
-  columnWrapper: {
+  productos: {
+    flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "space-between",
   },
 });
-
 export default Catalogo;
