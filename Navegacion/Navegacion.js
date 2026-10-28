@@ -4,6 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Login from "../Screens/Login";
+import Registro from "../Screens/Registro";
 import Catalogo from "../Screens/Catalogo";
 import VistaAdmin from "../Screens/VistaAdmin";
 import NuevoProducto from "../Screens/nuevoProducto";
@@ -119,6 +120,7 @@ export default function Navegacion() {
         screenOptions={{ headerShown: false }}
       >
         <RootStack.Screen name="Login" component={Login} />
+        <RootStack.Screen name="Registro" component={Registro} />
         <RootStack.Screen name="ClienteTabs" component={ClienteTabs} />
         <RootStack.Screen name="AdminTabs" component={AdminTabs} />
       </RootStack.Navigator>

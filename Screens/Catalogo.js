@@ -7,7 +7,7 @@ import {
   ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import { useFocusEffect } from "@react-navigation/native";
 import { db } from "../firebase/config";
 import Categoria from "../components/Categoria";
@@ -41,26 +41,47 @@ const Catalogo = () => {
     }
   };
 
-  const obtenerProductosPorCategoria = async (categoriaId) => {
-    if (categoriaId === "todos") {
+  const normalizarTexto = (valor) =>
+    String(valor ?? "").trim().toLowerCase();
+
+  const coincidenciaCategoria = (producto, categoriaId, categoriaNombre) => {
+    const idCategoria = normalizarTexto(categoriaId);
+    const nombreCategoria = normalizarTexto(categoriaNombre);
+
+    const valoresProducto = [
+      producto.categoriaId,
+      producto.idCategoria,
+      producto.categoria,
+      producto.categoriaNombre,
+      producto.categoriaName,
+      producto.nombreCategoria,
+      producto.categoryId,
+      producto.category,
+      producto.categoryName,
+    ].map(normalizarTexto);
+
+    return valoresProducto.some((valor) => {
+      if (!valor) return false;
+      return (
+        valor === idCategoria ||
+        valor === nombreCategoria ||
+        valor.replace(/\s+/g, "") === idCategoria.replace(/\s+/g, "") ||
+        valor.replace(/\s+/g, "") === nombreCategoria.replace(/\s+/g, "")
+      );
+    });
+  };
+
+  const obtenerProductosPorCategoria = (categoriaId, categoriaNombre) => {
+    if (!categoriaId || categoriaId === "todos") {
       setProductos(todosProductos);
       return;
     }
 
-    try {
-      const consulta = query(
-        collection(db, "Productos"),
-        where("categoriaId", "==", categoriaId),
-      );
-      const consultaSnapshot = await getDocs(consulta);
-      const datos = [];
-      consultaSnapshot.forEach((documento) => {
-        datos.push({ id: documento.id, ...documento.data() });
-      });
-      setProductos(datos);
-    } catch (error) {
-      console.error("Error obteniendo productos por categoría:", error);
-    }
+    const productosCoincidentes = todosProductos.filter((producto) =>
+      coincidenciaCategoria(producto, categoriaId, categoriaNombre),
+    );
+
+    setProductos(productosCoincidentes);
   };
 
   const obtenerProductos = async () => {
@@ -109,7 +130,7 @@ const Catalogo = () => {
             key={categoria.id}
             nombre={categoria.nombre}
             icono={categoria.icono}
-            onPress={() => obtenerProductosPorCategoria(categoria.id)}
+            onPress={() => obtenerProductosPorCategoria(categoria.id, categoria.nombre)}
           />
         ))}
       </ScrollView>
