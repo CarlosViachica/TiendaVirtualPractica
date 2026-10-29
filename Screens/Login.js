@@ -80,6 +80,8 @@ export default function Login({ navigation }) {
       <TouchableOpacity style={styles.registroBoton} onPress={() => navigation.navigate("Registro")}>
         <Text style={styles.textoRegistro}>¿No tienes una cuenta? Regístrate</Text>
       </TouchableOpacity>
+
+      
     </View>
   );
 }

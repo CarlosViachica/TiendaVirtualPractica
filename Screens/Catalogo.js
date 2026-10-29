@@ -14,11 +14,13 @@ import Categoria from "../components/Categoria";
 import Producto from "../components/Producto";
 
 const Catalogo = () => {
+  // Estado para la búsqueda del usuario y para guardar los datos de categorías y productos.
   const [busqueda, setBusqueda] = useState("");
   const [categorias, setCategorias] = useState([]);
   const [productos, setProductos] = useState([]);
   const [todosProductos, setTodosProductos] = useState([]);
 
+  // Cada vez que la pantalla vuelve a estar activa, se recargan las categorías y productos.
   useFocusEffect(
     useCallback(() => {
       obtenerCategorias();
@@ -26,6 +28,7 @@ const Catalogo = () => {
     }, []),
   );
 
+  // Carga las categorías desde Firestore y agrega una opción inicial para ver todo el catálogo.
   const obtenerCategorias = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "Categorias"));
@@ -41,9 +44,11 @@ const Catalogo = () => {
     }
   };
 
+  // Convierte texto a un formato uniforme para comparar nombres e IDs sin importar mayúsculas o espacios.
   const normalizarTexto = (valor) =>
     String(valor ?? "").trim().toLowerCase();
 
+  // Verifica si un producto pertenece a la categoría seleccionada, aceptando varios nombres de campos.
   const coincidenciaCategoria = (producto, categoriaId, categoriaNombre) => {
     const idCategoria = normalizarTexto(categoriaId);
     const nombreCategoria = normalizarTexto(categoriaNombre);
@@ -71,6 +76,7 @@ const Catalogo = () => {
     });
   };
 
+  // Muestra solo los productos de la categoría seleccionada, o todos si se elige "Todos".
   const obtenerProductosPorCategoria = (categoriaId, categoriaNombre) => {
     if (!categoriaId || categoriaId === "todos") {
       setProductos(todosProductos);
@@ -84,6 +90,7 @@ const Catalogo = () => {
     setProductos(productosCoincidentes);
   };
 
+  // Obtiene todos los productos desde Firestore y los guarda para usarlos en filtros.
   const obtenerProductos = async () => {
     try {
       const querySnapshot = await getDocs(collection(db, "Productos"));
@@ -98,16 +105,19 @@ const Catalogo = () => {
     }
   };
 
+  // Filtra los productos por el texto escrito en el buscador.
   const productosFiltrados = productos.filter((producto) =>
     (producto.nombre || "").toLowerCase().includes(busqueda.toLowerCase()),
   );
 
+  // Render principal del catálogo: buscador, categorías, sección de productos y listado final.
   return (
     <ScrollView
       style={styles.contenedor}
       contentContainerStyle={styles.contenedorContenido}
       showsVerticalScrollIndicator={false}
     >
+      {/* Barra de búsqueda para filtrar productos por nombre. */}
       <View style={styles.buscador}>
         <Ionicons name="search-outline" size={18} color="#7C7CFF" />
         <TextInput
@@ -119,6 +129,7 @@ const Catalogo = () => {
         />
       </View>
 
+      {/* Carrusel horizontal de categorías para cambiar el filtro activo. */}
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -138,6 +149,7 @@ const Catalogo = () => {
       <View style={styles.linea} />
       <Text style={styles.titulo}>News</Text>
 
+      {/* Grid de productos con el resultado final del filtro actual. */}
       <View style={styles.productos}>
         {productosFiltrados.map((producto) => (
           <Producto

@@ -127,6 +127,8 @@ const NuevoProducto = () => {
         await addDoc(collection(db, "Productos"), datos);
       }
       // Vuelve a la pantalla anterior, cuya lista se recarga al tomar el foco.
+
+
       navigation.goBack();
     } catch (e) {
       // Deja el formulario abierto e informa si Firestore no pudo guardar.
